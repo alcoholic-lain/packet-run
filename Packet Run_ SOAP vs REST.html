@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Packet Run: SOAP vs REST</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=DM+Mono:wght@500&family=DM+Sans:wght@400;600&display=swap">
+<style>
+:root{--bg:#EFE6D2;--ink:#1D1B16;--panel:#FBF6EA;--red:#E4572E;--gold:#F2B134;--green:#3FA34D;--sh:#1D1B16;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1B1914;--ink:#F3EAD6;--panel:#27241C;--sh:#000;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1B1914;--ink:#F3EAD6;--panel:#27241C;--sh:#000;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 18px/1.4 "DM Sans",system-ui,sans-serif}
+main{max-width:980px;margin:0 auto;padding:14px}
+h1,h2,h3,.logo{font-family:"Bricolage Grotesque","Arial Black",sans-serif;font-weight:800;margin:0}
+.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{font-size:30px;letter-spacing:-.02em;margin-right:auto}.logo span{background:var(--red);color:#FBF6EA;padding:0 8px;border-radius:6px;transform:rotate(-3deg);display:inline-block}
+.chip{font:500 15px "DM Mono",monospace;background:var(--panel);border:3px solid var(--ink);border-radius:10px;padding:3px 10px;box-shadow:3px 3px 0 var(--sh)}
+.chip b{font-size:17px}
+.ib{font:500 16px "DM Mono",monospace;background:var(--panel);color:var(--ink);border:3px solid var(--ink);border-radius:10px;padding:3px 10px;box-shadow:3px 3px 0 var(--sh);cursor:pointer}
+.prog{height:12px;border:3px solid var(--ink);border-radius:8px;margin:12px 0;background:var(--panel);overflow:hidden}.prog i{display:block;height:100%;width:0;background:var(--gold);transition:width .4s}
+.qp{background:var(--panel);border:4px solid var(--ink);border-radius:16px;padding:14px 20px;box-shadow:6px 6px 0 var(--sh);margin-bottom:16px;min-height:96px}
+.qn{font:500 14px "DM Mono",monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--red)}
+.qp h2{font-size:clamp(21px,3.4vw,32px);line-height:1.15;margin-top:4px}
+.stage{position:relative;border:4px solid var(--ink);border-radius:16px;overflow:hidden;box-shadow:6px 6px 0 var(--sh);background:#34312C}
+canvas{display:block;width:100%;height:auto}
+.ov,.card{position:absolute;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;color:#1D1B16}
+.ov{inset:0;padding:22px;background:rgba(239,230,210,.96);overflow:auto}
+.card{left:3%;right:3%;bottom:3%;padding:14px 20px;background:#FBF6EA;border:4px solid #1D1B16;border-radius:14px;box-shadow:5px 5px 0 rgba(0,0,0,.4);align-items:flex-start;text-align:left}
+.card h3{font-size:24px}.card p{margin:0}
+.pz{position:absolute;top:3%;left:50%;transform:translateX(-50%);display:none;background:#FBF6EA;color:#1D1B16;border:4px solid #1D1B16;border-radius:12px;padding:6px 18px;font:500 16px "DM Mono",monospace;box-shadow:4px 4px 0 rgba(0,0,0,.4);white-space:nowrap}
+.ov h1{font-size:clamp(38px,8vw,76px);line-height:.95;letter-spacing:-.03em}.ov p{margin:0;max-width:560px}
+.big{font:800 clamp(44px,9vw,80px)/1 "Bricolage Grotesque",sans-serif;color:var(--red)}
+.go{font:800 22px "Bricolage Grotesque",sans-serif;background:var(--gold);color:#1D1B16;border:4px solid #1D1B16;border-radius:12px;padding:10px 26px;box-shadow:4px 4px 0 #1D1B16;cursor:pointer}
+.go:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #1D1B16}
+.row{display:flex;gap:12px;margin-top:14px}.row .go{flex:1;font-size:30px;background:var(--panel);color:var(--ink);border-color:var(--ink);box-shadow:4px 4px 0 var(--sh)}
+@media (hover:hover) and (min-width:900px){.row{display:none}}
+.hint{font:500 14px "DM Mono",monospace;opacity:.75;margin:12px 2px 0}
+.miss{text-align:left;font-size:15px;max-height:150px;overflow:auto;border-top:3px dashed #1D1B16;padding-top:8px;width:min(560px,100%)}.miss div{margin:3px 0}
+kbd{font:500 13px "DM Mono",monospace;border:2px solid #1D1B16;border-radius:5px;padding:0 6px;background:#FBF6EA}
+</style></head><body><main>
+<div class="bar"><div class="logo"><span>Packet</span> Run</div>
+<div class="chip">Score <b id="sc">0</b></div><div class="chip">Streak <b id="stk">0</b></div><div class="chip" id="lv">♥♥♥</div>
+<button class="ib" id="mu" aria-label="Toggle sound">Sound on</button><button class="ib" id="pa">Pause</button></div>
+<div class="prog"><i id="pg"></i></div>
+<section class="qp"><div class="qn" id="qn">SOAP vs REST</div><h2 id="q">Deliver the packet. Pick the right lane.</h2></section>
+<div class="stage"><canvas id="c" width="960" height="480"></canvas><div class="ov" id="ov"></div><div class="pz" id="pz">Paused · press P to resume</div>
+<div class="card" id="cd"><h3 id="cv"></h3><p id="cf"></p><button class="go" id="nx" style="font-size:18px;padding:6px 18px;margin-top:6px">Next ▸ <kbd>Space</kbd></button></div></div>
+<div class="row"><button class="go" id="L" aria-label="Move left">◀</button><button class="go" id="R" aria-label="Move right">▶</button></div>
+<p class="hint">← → or A D steer · 1 2 3 jump to a lane · Space continue · P pause</p>
+</main>
+<script>
+var Q=[
+{q:"Which style wraps every message in an XML envelope?",a:["SOAP","REST","Both"],e:"A SOAP message is an XML document with an envelope, header and body."},
+{q:"What does a WSDL file describe?",a:["A SOAP service contract","A REST cache rule","A database schema"],e:"WSDL publishes a SOAP service’s operations, types and location."},
+{q:"In REST, what identifies a resource?",a:["A URL","A WSDL file","An envelope"],e:"Every resource gets its own URI, and clients act on it with HTTP methods."},
+{q:"Which request fetches user 42 the RESTful way?",a:["GET /users/42","POST /getUser","DELETE /users/42"],e:"The URL names the thing. The HTTP method is the verb."},
+{q:"Which style gets HTTP caching almost for free?",a:["REST","SOAP","Neither"],e:"GET responses are cacheable, so REST benefits from browser and proxy caches."},
+{q:"A 404 Not Found status is most at home in…",a:["REST","SOAP","Neither"],e:"REST leans on HTTP status codes. SOAP reports errors in a Fault element."},
+{q:"Which style ships WS-Security as part of its standards?",a:["SOAP","REST","Neither"],e:"WS-Security protects the message itself, not just the connection."},
+{q:"What does “stateless” mean?",a:["Each request carries its own context","The server remembers your session","Requests are always encrypted"],e:"A stateless server keeps no client session between calls."},
+{q:"You send DELETE /users/42 twice. The end state is…",a:["Same as sending it once","Two users deleted","A corrupted WSDL"],e:"DELETE is idempotent: repeating it leaves the same end state."},
+{q:"A bank wiring up strict legacy systems often picks…",a:["SOAP","REST","Neither"],e:"Formal contracts and WS-* standards keep SOAP alive in finance."},
+{q:"SOAP is a protocol. What is REST?",a:["An architectural style","A messaging protocol","An XML dialect"],e:"REST is a set of constraints, not a protocol or a spec."},
+{q:"Who defined REST in a 2000 dissertation?",a:["Roy Fielding","Tim Berners-Lee","Vint Cerf"],e:"Roy Fielding described REST’s six constraints in his doctoral thesis."},
+{q:"Which HTTP method is NOT idempotent?",a:["POST","PUT","DELETE"],e:"Two identical POSTs can create two resources."},
+{q:"Which method is “safe”, meaning it changes nothing on the server?",a:["GET","PUT","POST"],e:"GET (and HEAD) must have no side effects on resource state."},
+{q:"Which status code means “created” after a POST?",a:["201 Created","204 No Content","404 Not Found"],e:"201 Created, ideally with a Location header for the new resource."},
+{q:"Which endpoint breaks REST naming rules?",a:["POST /deleteTask/42","DELETE /tasks/42","GET /tasks/42"],e:"Verbs in the URL duplicate what the HTTP method already says."},
+{q:"A SOAP message is made of which parts?",a:["Envelope, header and body","Header, footer and cookie","Query, path and fragment"],e:"The envelope frames the message. Header carries metadata, body the payload."},
+{q:"What does HATEOAS add to a REST response?",a:["Links to next actions","A server-side session","An XML envelope"],e:"Hypermedia as the Engine of Application State: clients follow links."},
+{q:"Which data formats can REST return?",a:["JSON, XML, plain text and more","XML only","WSDL only"],e:"REST is format-agnostic. JSON is just the popular default."},
+{q:"Which style typically sends smaller messages?",a:["REST","SOAP","They are identical"],e:"XML envelopes add overhead, so SOAP messages are usually larger."},
+{q:"Which style has a reliable-messaging standard (WS-ReliableMessaging)?",a:["SOAP","REST","Neither"],e:"With REST the client usually retries on failure instead."},
+{q:"On Richardson’s maturity model, what is Level 3?",a:["HATEOAS","Only POST to one URL","XML envelopes"],e:"Level 0 is a single POST endpoint, like SOAP. Level 3 adds hypermedia."},
+{q:"Which method replaces a whole resource and is idempotent?",a:["PUT","PATCH","POST"],e:"PUT replaces. PATCH is a partial update and is not guaranteed idempotent."},
+{q:"A public mobile-app API needs fast iteration. Pick…",a:["REST","SOAP","Neither"],e:"Light JSON, loose contracts and HTTP tooling make REST the usual pick."},
+{q:"What does SOAP stand for?",a:["Simple Object Access Protocol","Standard Object Application Protocol","Secure Online Access Package"],e:"Ironically, it is rarely simple."}];
+var N=12,$=function(i){return document.getElementById(i)},c=$("c"),x=c.getContext("2d"),W=960,H=480,LX=[280,480,680],PY=395,INK="#1D1B16";
+var st="menu",deck=[],qi=0,lives=3,score=0,streak=0,ok=0,miss=[],lane=1,px=480,g=null,v=0,tgt=0,off=0,bt=0,ct=0,shake=0,flash=0,fc="",best=0,mute=false,paused=false,t0=0;
+try{best=+localStorage.getItem("pr-best2")||0}catch(e){}
+var AC=null;function snd(f,d,t,vol){if(mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();var o=AC.createOscillator(),n=AC.createGain();o.type=t||"square";o.frequency.value=f;n.gain.value=vol||.05;o.connect(n);n.connect(AC.destination);o.start();n.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
+function hud(){$("sc").textContent=score;$("stk").textContent=streak;$("lv").textContent="♥".repeat(Math.max(lives,0))+"♡".repeat(3-Math.max(lives,0));$("pg").style.width=(st==="menu"?0:Math.min(100,(qi+(st==="result"?1:0))/N*100))+"%"}
+function sh(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function ov(h){var o=$("ov");o.innerHTML=h;o.style.display="flex";var b=$("go");if(b)b.onclick=start}
+function start(){deck=sh(Q.slice()).slice(0,N);qi=0;lives=3;score=0;streak=0;ok=0;miss=[];lane=1;g=null;$("ov").style.display="none";$("cd").style.display="none";st="count";ct=3.2;v=tgt=0;$("qn").textContent="Get ready";$("q").textContent="Three wrong turns and the packet is dropped.";hud()}
+function spawn(){var q=deck[qi],o=sh([0,1,2]);g={y:-70,t:o.map(function(i){return q.a[i]}),cl:o.indexOf(0),pk:-1};tgt=100+qi*4;st="play";
+$("qn").textContent="Question "+(qi+1)+" of "+N;$("q").textContent=q.q;$("cd").style.display="none";hud()}
+function resolve(){var q=deck[qi];g.pk=lane;st="drive";bt=.9;var r=lane===g.cl;
+if(r){streak++;ok++;var p=100+(streak-1)*25;score+=p;flash=.5;fc="63,163,77";snd(660,.12);setTimeout(snd,110,880,.22);$("cv").textContent="✓ Correct +"+p}
+else{streak=0;lives--;shake=18;flash=.5;fc="228,87,46";snd(150,.4,"sawtooth",.09);miss.push(q);$("cv").textContent="✗ It was “"+q.a[0]+"”"}
+$("cf").textContent=q.e;hud()}
+function after(){tgt=0;st="result";$("cd").style.display="flex";hud();$("nx").focus()}
+function next(){$("cd").style.display="none";qi++;if(lives<=0||qi>=N)end();else spawn()}
+function end(){st="over";tgt=0;var r=ok>=11?"API Architect":ok>=9?"Senior Packet":ok>=6?"Routed Packet":"Dropped Packet";
+if(score>best){best=score;try{localStorage.setItem("pr-best2",best)}catch(e){}}
+$("qn").textContent="Run complete";$("q").textContent=lives>0?"Packet delivered.":"Packet lost in transit.";hud();
+var m=miss.length?"<div class=\"miss\"><b>Worth a second look</b>"+miss.map(function(z){return "<div>• "+z.q+" → <b>"+z.a[0]+"</b></div>"}).join("")+"</div>":"<p><b>Flawless run. No misses.</b></p>";
+ov("<h1>"+r+"</h1><div class=\"big\">"+score+"</div><p>"+ok+" of "+(qi<N?qi:N)+" correct · Best "+best+"</p>"+m+"<button class=\"go\" id=\"go\">Run again</button>")}
+function mv(d){lane=Math.max(0,Math.min(2,lane+d))}
+function pause(){if(st!=="play"&&st!=="count"&&st!=="drive")return;paused=!paused;$("pa").textContent=paused?"Resume":"Pause";$("pz").style.display=paused?"block":"none"}
+addEventListener("keydown",function(e){var k=e.key;if(k==="ArrowLeft"||k==="a"||k==="A"){mv(-1);e.preventDefault()}
+else if(k==="ArrowRight"||k==="d"||k==="D"){mv(1);e.preventDefault()}
+else if(k==="1"||k==="2"||k==="3")lane=+k-1;
+else if(k==="p"||k==="P"||k==="Escape")pause();
+else if(k===" "||k==="Enter"){if(st==="menu"||st==="over")start();else if(st==="result")next();e.preventDefault()}});
+document.addEventListener("visibilitychange",function(){if(document.hidden&&!paused)pause()});
+$("L").onclick=function(){mv(-1)};$("R").onclick=function(){mv(1)};$("nx").onclick=next;$("pa").onclick=pause;
+$("mu").onclick=function(){mute=!mute;this.textContent=mute?"Sound off":"Sound on"};
+c.addEventListener("pointerdown",function(e){var r=c.getBoundingClientRect();mv(e.clientX-r.left<r.width/2?-1:1)});
+function rr(a,b,w,h,r){x.beginPath();x.roundRect(a,b,w,h,r)}
+function wrap(t,cx,cy,mw){x.font="600 20px 'DM Sans',sans-serif";var w=t.split(" "),l=[],s="";w.forEach(function(k){var n=s?s+" "+k:k;if(x.measureText(n).width>mw&&s){l.push(s);s=k}else s=n});l.push(s);l.forEach(function(z,i){x.fillText(z,cx,cy+(i-(l.length-1)/2)*24)})}
+function van(cx,cy,rot){x.save();x.translate(cx,cy);x.rotate(rot);x.lineWidth=4;x.strokeStyle=INK;x.fillStyle=INK;[-27,27].forEach(function(a){[-24,24].forEach(function(b){rr(a-6,b-10,12,22,4);x.fill()})});
+x.fillStyle="#F2B134";rr(-23,-42,46,84,12);x.fill();x.stroke();x.fillStyle="#9ED0E6";rr(-16,-34,32,16,5);x.fill();x.stroke();
+x.fillStyle="#FBF6EA";rr(-15,-8,30,24,3);x.fill();x.lineWidth=3;x.stroke();x.beginPath();x.moveTo(-15,-8);x.lineTo(0,5);x.lineTo(15,-8);x.stroke();
+x.fillStyle="#FBF6EA";x.fillRect(-18,-44,10,5);x.fillRect(8,-44,10,5);x.restore()}
+function draw(){x.save();if(shake>0)x.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+x.fillStyle="#8DB580";x.fillRect(-20,-20,W+40,H+40);
+for(var i=0;i<6;i++){var y=((i*100+off*.9)%(H+80))-40;[[50+(i*37)%90,y],[860-(i*29)%70,y+45]].forEach(function(p){x.fillStyle="#5E9C5A";x.strokeStyle=INK;x.lineWidth=4;x.beginPath();x.arc(p[0],p[1],24,0,7);x.fill();x.stroke();x.fillStyle="#7DBB74";x.beginPath();x.arc(p[0]-7,p[1]-7,8,0,7);x.fill()})}
+x.fillStyle="#34312C";x.fillRect(180,0,600,H);x.fillStyle=INK;x.fillRect(172,0,8,H);x.fillRect(780,0,8,H);
+x.fillStyle="#EFE6D2";for(var j=-1;j<7;j++){var yy=j*80+(off%80);x.fillRect(377,yy,6,38);x.fillRect(577,yy,6,38)}
+if(g){for(var n=0;n<3;n++){var cx=LX[n],h=g.pk>=0,col="#FBF6EA";if(h&&n===g.cl)col="#9AD6A0";else if(h&&n===g.pk)col="#F4A28A";
+x.fillStyle="rgba(0,0,0,.35)";rr(cx-90,g.y-52,184,112,12);x.fill();x.fillStyle=INK;x.fillRect(cx-76,g.y+52,8,22);x.fillRect(cx+68,g.y+52,8,22);
+x.fillStyle=col;rr(cx-92,g.y-58,184,112,12);x.fill();x.strokeStyle=INK;x.lineWidth=5;x.stroke();
+x.fillStyle=INK;x.textAlign="center";x.textBaseline="middle";wrap(g.t[n],cx,g.y-2,156);
+x.fillStyle="#E4572E";x.beginPath();x.arc(cx-82,g.y-58,17,0,7);x.fill();x.stroke();x.fillStyle="#FBF6EA";x.font="800 19px 'Bricolage Grotesque',sans-serif";x.fillText("ABC"[n],cx-82,g.y-57)}}
+van(px,PY+Math.sin(off*.05)*1.5,(px-LX[lane])*-.0012);
+if(st==="count"){var k=Math.ceil(ct-.2);x.fillStyle="rgba(29,27,22,.55)";x.fillRect(0,0,W,H);x.fillStyle="#F2B134";x.strokeStyle=INK;x.lineWidth=10;x.font="800 150px 'Bricolage Grotesque',sans-serif";x.textAlign="center";x.textBaseline="middle";var s=k>0?""+k:"GO!";x.strokeText(s,480,220);x.fillText(s,480,220)}
+if(flash>0){x.fillStyle="rgba("+fc+","+flash*.45+")";x.fillRect(0,0,W,H)}x.restore()}
+var last=0,lk=-1;function loop(t){var dt=Math.min(.05,(t-last)/1000||0);last=t;
+if(!paused){var idle=st==="menu"||st==="over";v+=((idle?50:tgt)-v)*Math.min(1,dt*(tgt===0&&!idle?4:3));off+=v*dt;px+=(LX[lane]-px)*Math.min(1,dt*12);
+if(shake>0)shake=Math.max(0,shake-dt*60);if(flash>0)flash=Math.max(0,flash-dt);
+if(st==="count"){ct-=dt;var k=Math.ceil(ct-.2);if(k!==lk){lk=k;if(k>0)snd(440,.1);else snd(880,.25)}if(ct<=0){lk=-1;spawn()}}
+if(g&&st==="play"){g.y+=v*dt;if(g.y+58>=PY-40)resolve()}
+else if(g&&st==="drive"){g.y+=240*dt;bt-=dt;if(bt<=0)after()}}
+draw();requestAnimationFrame(loop)}
+ov("<h1>Packet Run</h1><p>You are a data packet racing to the server. Steer through the sign with the right answer. Three wrong turns and you are dropped.</p><p>12 questions per run, drawn from a bank of "+Q.length+".</p><button class=\"go\" id=\"go\">Start the run <kbd>Space</kbd></button>");
+hud();requestAnimationFrame(loop);
+</script></body></html>
